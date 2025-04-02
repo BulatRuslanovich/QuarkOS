@@ -15,13 +15,13 @@ bootsect.bin:
 	cd ../boot/ && nasm bootsect.asm -f bin -o ../build/bootsect.bin && cd -
 
 kernel.bin: kernel_entry.o kernel.o
-	i386-elf-ld -o kernel.bin -Ttext 0x1000 kernel_entry.o $(O_FILES) --oformat binary
+	ld -m elf_i386 -o kernel.bin -Ttext 0x1000 kernel_entry.o $(O_FILES) --oformat binary
 
 kernel_entry.o:
 	nasm ../boot/kernel_entry.asm -f elf -o kernel_entry.o
 
 kernel.o:
-	i386-elf-gcc ${CFLAGS} -ffreestanding -c $(C_FILES)
+	gcc -m32 ${CFLAGS} -ffreestanding -c $(C_FILES)
 
 clean:
 	rm *.bin *.o *.elf

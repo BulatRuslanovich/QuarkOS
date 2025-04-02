@@ -1,59 +1,46 @@
 #include "../common.h"
 #include "../drivers/screen.h"
+#include "../drivers/input.h"
+#include "../drivers/print.h"
+#include "../drivers/asm_io.h"
 
-void kprint_colored(u8 *str, u8 attr) {
-    while (*str) {
-        if (*str == '_')
-            putchar(*str, 0x00);
-        else
-            putchar(*str, attr);
-        str++;
-    }
-}
-
-void kprint_rick_and_morty() {
-    u8 *char_map[] = {
-        "__#_#_#\n",
-        "__#####____", "#####\n",
-        "__#", "###", "#____", "#", "###", "#\n",
-        "__#", "#", "#", "#", "#____", "#", "#", "#", "#", "#\n",
-        "__#", "#", "#", "#", "#____", "#", "#", "#", "#", "#\n",
-        "__#####____", "#####\n",
-        "___###_____", "_###_\n",
-        "__##", "#", "##____", "#####\n",
-        "__##", "#", "##____", "#", "###", "#\n",
-        "__##", "#", "##____", "#", "###", "#\n",
-        "__#", "#", "#", "#", "#____", "#", "###", "#\n",
-        "___##", "#______", "###\n",
-        "___#_#______#_#\n"
-    };
-    u8 color_map[] = {
-        0xbb,
-        0xbb, 0x66,
-        0xbb, 0xff, 0xbb, 0x66, 0xff, 0x66,
-        0xff, 0x00, 0xff, 0x00, 0xff, 0xff, 0x00, 0xff, 0x00, 0xff,
-        0xff, 0x00, 0xff, 0x00, 0xff, 0xff, 0x00, 0xff, 0x00, 0xff,
-        0xff, 0xff,
-        0xff, 0xff,
-        0x77, 0xbb, 0x77, 0xee,
-        0x77, 0xbb, 0x77, 0xff, 0xee, 0xff,
-        0x77, 0xbb, 0x77, 0xff, 0xee, 0xff,
-        0xff, 0x77, 0xbb, 0x77, 0xff, 0xff, 0xee, 0xff,
-        0x99, 0x77, 0x99,
-        0x99
-    };
-    u8 i = 0;
-    while (i < 61) {
-        kprint_colored(char_map[i], color_map[i]);
-        i++;
-    }
-}
 
 s32 kmain() {
     clear_screen();
+    print_rick_and_morty();
+    printf("QuarkOS v1.0\n");
+    printf("Memory: %d MB\n", 1024);
+    printf("Address: 0x%x\n", 0x100000);
+    printf(">");
 
-    kprint_rick_and_morty();
+    char input[50];
 
-    kprint("SaidashOC");
+    while (1) {
+        scanf(input, sizeof(input));
+
+        // printf("You entered: ");
+        // printf(input);
+
+        if (strcmp(input, "q") == 0) {
+            clear_screen();
+            printf("Shutting down...");
+            // asm volatile("hlt");
+            power_off();
+            break;
+        } else if (!strcmp(input, "cow")) {
+            printf("\n");
+            print_cow();
+        } else if (!strcmp(input, "clear")) {
+            clear_screen();
+        } else if (!strcmp(input, "rimo")) {
+            print_rick_and_morty();
+        } else {
+            colored_print(0x04, "Invalid input!");
+        }
+
+        printf("\n>");
+    }
+
+    while (1) {}
     return 0;
 }
