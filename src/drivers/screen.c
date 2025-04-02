@@ -42,6 +42,17 @@ void putchar(u8 symbol, u8 color) {
         return;
     }
 
+    if (symbol == '\b') {
+        // Обработка Backspace
+        if (offset >= 2) {
+            set_cursor(offset - 2);
+            write(' ', color, offset - 2);
+            set_cursor(offset - 2);
+        }
+        return;
+    }
+
+
     if (offset == MAX_ROWS * MAX_COLS * 2) {
         scroll_line();
     }
