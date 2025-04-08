@@ -1,3 +1,12 @@
+/**
+* @file asm_io.c
+ * @brief Низкоуровневые операции ввода-вывода через порты
+ * @author getname
+ * @date 02.04.2025
+ * @defgroup io_ports Функции работы с портами ввода-вывода
+ * @{
+ */
+
 #include "asm_io.h"
 
 /**
@@ -61,3 +70,5 @@ unsigned char port_word_in(unsigned short port) {
 void port_word_out(unsigned short port, unsigned short data) {
     __asm__("out %%ax, %%dx" : : "a" (data), "d" (port));
 }
+
+/** @} */ // Конец группы io_ports

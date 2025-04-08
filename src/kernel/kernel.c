@@ -10,7 +10,7 @@ s32 kmain() {
     print_rick_and_morty();
     printf("QuarkOS v1.0\n");
     printf("Memory: %d MB\n", 1024);
-    printf("Address: 0x%x\n", 0x100000);
+    printf("Address: %x\n", 0x100000);
     printf("> ");
 
     char input[50];
@@ -49,6 +49,5 @@ s32 kmain() {
         printf("\n> ");
     }
 
-    while (1) {}
     return 0;
 }
