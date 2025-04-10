@@ -1,49 +1,59 @@
-[org 0x7c00]
+; Программа загрузочного сектора, загружающая ядро ОС в защищенный режим (32-бит)
 
-KER_OFFSET equ 0x1000
-	mov [BOOT_DRIVE], dl
-	mov bp, 0x9000
-	mov sp, bp
+[org 0x7c00]          ; Указание компилятору, что код будет загружен по адресу 0x7c00 (стандартный адрес загрузки BIOS)
 
-	mov bx, MSG_REAL_MODE
-	call print_string
+KER_OFFSET equ 0x1000 ; Адрес загрузки ядра в память (0x1000 = 4096 байт)
+BOOT_DRIVE db 0       ; Переменная для хранения номера загрузочного диска (DL регистр от BIOS)
 
-	call load_kernel
-	call switch_to_pm
-	jmp $
+; Инициализация среды реального режима
+start:
+    mov [BOOT_DRIVE], dl   ; Сохраняем номер диска (BIOS передает его в DL)
+    mov bp, 0x9000         ; Настраиваем базовый указатель стека
+    mov sp, bp              ; Устанавливаем вершину стека (стек растет вниз)
 
-%include "print_string.asm"
-%include "print_hex.asm"
-%include "disk_load.asm"
-%include "print_string_pm.asm"
-%include "switch.asm"
-%include "gdt.asm"
+    ; Вывод сообщения о запуске в реальном режиме
+    mov bx, MSG_REAL_MODE
+    call print_string       ; Используем функцию из print_string.asm
 
+    call load_kernel       ; Загружаем ядро с диска в память
+    call switch_to_pm      ; Переключаемся в защищенный режим
+    jmp $                  ; Бесконечный цикл (на всякий случай)
+
+; Подключаемые модули
+%include "print_string.asm"   ; Функции для работы с текстом в реальном режиме
+%include "print_hex.asm"     ; Функция вывода hex-чисел
+%include "disk_load.asm"     ; Функция чтения секторов с диска
+%include "print_string_pm.asm"; Функции печати в защищенном режиме
+%include "switch.asm"        ; Код переключения в защищенный режим
+%include "gdt.asm"           ; Глобальная таблица дескрипторов (GDT)
+
+; ------------ Функция загрузки ядра (16-битный режим) ------------
 [bits 16]
-
 load_kernel:
-	mov bx, MSG_LOAD_KERNEL
-	call print_string
+    mov bx, MSG_LOAD_KERNEL ; Сообщение о начале загрузки
+    call print_string
 
-	mov bx, KER_OFFSET
-	mov dh, 16
-	mov dl, [BOOT_DRIVE]
-	call disk_load
-	ret
+    ; Параметры для disk_load:
+    mov bx, KER_OFFSET      ; Адрес загрузки (ES:BX = 0x0000:KER_OFFSET)
+    mov dh, 16              ; Количество секторов для чтения (16 * 512 = 8 KB)
+    mov dl, [BOOT_DRIVE]    ; Номер диска
+    call disk_load          ; Чтение данных с диска
+    ret
 
+; ------------ Код защищенного режима (32-битный) ------------
 [bits 32]
-
 BEGIN_PM:
-	mov ebx, MSG_PROT_MODE
-	call print_string_pm
-	call KER_OFFSET
-	jmp $
+    mov ebx, MSG_PROT_MODE  ; Сообщение в защищенном режиме
+    call print_string_pm    ; Используем функцию печати PM
 
-BOOT_DRIVE:	db 0
-MSG_REAL_MODE:	db "Started in REAL MODE", 0
-MSG_PROT_MODE:	db "Switched to PROTECTED MODE", 0
-MSG_LOAD_KERNEL:	db "Loading kernel into VIDEO_MEM"
+    call KER_OFFSET         ; Передаем управление ядру (адрес 0x1000)
+    jmp $                   ; Резервный бесконечный цикл
 
-times 510-($-$$) db 0
-dw 0xaa55
-	
+; ------------ Данные программы ------------
+MSG_REAL_MODE:      db "Started in REAL MODE", 0
+MSG_PROT_MODE:      db "Switched to PROTECTED MODE", 0
+MSG_LOAD_KERNEL:    db "Loading kernel into memory...", 0
+
+; Заполнение до 510 байт и сигнатура загрузочного сектора
+times 510-($-$$) db 0   ; Заполнение нулями до 510-го байта
+dw 0xaa55               ; Сигнатура загрузочного сектора (0x55 0xAA)
