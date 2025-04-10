@@ -1,45 +1,47 @@
+; Функция загрузки данных с диска (использует прерывание BIOS 0x13, функцию 0x02)
 disk_load:
-	push dx
-	mov ah, 0x02
-	mov al, dh
-	mov ch, 0x00
-	mov dh, 0x00
-	mov cl, 0x02
-	int 0x13
-	jc disk_error
-	pop dx
-	cmp dh, al
-	jne disk_sectors_error
-	jmp disk_success
-	jmp disk_exit
+    push dx                 ; Сохраняем DX (в DX передано количество секторов для чтения)
+    mov ah, 0x02            ; Указываем функцию BIOS: чтение секторов с диска
+    mov al, dh              ; AL = количество секторов для чтения (значение из DH)
+    mov ch, 0x00            ; Номер цилиндра (0)
+    mov dh, 0x00            ; Номер головки (0)
+    mov cl, 0x02            ; Номер начального сектора (сектор 2, так как сектор 1 — загрузочный)
+    int 0x13                ; Вызываем прерывание BIOS для чтения секторов
+    jc disk_error           ; Если флаг переноса (CF) установлен — произошла ошибка
 
+    pop dx                  ; Восстанавливаем DX из стека (ожидаемое количество секторов)
+    cmp dh, al              ; Сравниваем ожидаемое (DH) и фактическое (AL) количество секторов
+    jne disk_sectors_error  ; Если не равны — ошибка чтения секторов
+    jmp disk_success        ; Если все верно — переход к сообщению об успехе
+
+; Обработка успешного завершения загрузки
 disk_success:
-	mov bx, SUCCESS_MSG
-	call print_string
-	jmp disk_exit
+    mov bx, SUCCESS_MSG     ; Загружаем адрес сообщения об успехе в BX
+    call print_string       ; Выводим сообщение на экран
+    jmp disk_exit           ; Переход к завершению функции
 
+; Обработка ошибки диска (например, диск не найден)
 disk_error:
-	mov bx, DISK_ERR_MSG
-	call print_string
-	mov dh, al
-	call print_hex
-	jmp disk_loop
+    mov bx, DISK_ERR_MSG    ; Загружаем адрес сообщения об ошибке
+    call print_string       ; Выводим сообщение
+    mov dh, al              ; Копируем код ошибки из AL в DH
+    call print_hex          ; Выводим код ошибки в шестнадцатеричном формате
+    jmp disk_loop           ; Переход к бесконечному циклу (критическая ошибка)
 
+; Обработка ошибки несоответствия количества секторов
 disk_sectors_error:
-	mov bx, SECTORS_ERR_MSG
-	call print_string
+    mov bx, SECTORS_ERR_MSG ; Загружаем адрес сообщения о неверном количестве секторов
+    call print_string       ; Выводим сообщение
 
-SUCCESS_MSG:
-	db "Disk was successfully read :)", 0
+; Сообщения для вывода (хранятся как данные в секторе)
+SUCCESS_MSG:      db "Disk was successfully read :)", 0   ; Сообщение об успехе
+DISK_ERR_MSG:     db "Disk read error! :(", 0             ; Сообщение об ошибке диска
+SECTORS_ERR_MSG:  db "Incorrect num of sectors read ", 0  ; Сообщение о неверном количестве секторов
 
-DISK_ERR_MSG:
-	db "Disk read error! :(", 0
-
-SECTORS_ERR_MSG:
-	db "Incorrect num of sectors read ", 0
-
+; Бесконечный цикл при критической ошибке (зависание)
 disk_loop:
-	jmp $
+    jmp $                   ; Бесконечный цикл (остановка выполнения)
 
+; Корректный выход из функции
 disk_exit:
-	ret
+    ret                     ; Возврат из функции в вызывающий код

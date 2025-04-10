@@ -1,26 +1,30 @@
+
+;Функция вывода строки на экран
+
 print_string:
-	pusha
-	mov ah, 0x0e
-	loop:
-		mov al, [bx]
-		cmp al, 0
-		je newline
-		jmp put_char
+	pusha                   ; Сохраняем все регистры, чтобы не повлиять на вызывающий код
+
+	mov ah, 0x0e            ; Устанавливаем функцию BIOS: teletype output (печать символа на экран)
+
+loop:
+	mov al, [bx]           ; Загружаем текущий символ строки из адреса, на который указывает BX
+	cmp al, 0              ; Проверяем, достигнут ли нуль-терминатор строки
+	je newline             ; Если да — переходим к переводу строки
+	jmp put_char           ; Иначе — переходим к выводу символа
 
 put_char:
-	int 0x10
-	inc bx
-	jmp loop
+	int 0x10               ; Вызываем BIOS-прерывание: вывод символа (AH=0x0E, AL — символ)
+	inc bx                 ; Переходим к следующему символу
+	jmp loop               ; Повторяем цикл
 
 newline:
-	mov ah, 0x0e
-	mov al, 0x0a
-	int 0x10
-	mov al, 0x0d
-	int 0x10
-	jmp return
+	mov ah, 0x0e           ; BIOS-функция вывода символа (всё ещё та же)
+	mov al, 0x0a           ; Символ перевода строки (LF)
+	int 0x10               ; Вывод LF
+	mov al, 0x0d           ; Символ возврата каретки (CR)
+	int 0x10               ; Вывод CR
+	jmp return             ; Выход из функции
 
 return:
-	popa
-	ret
-	
+	popa                   ; Восстанавливаем регистры
+	ret                    ; Возврат из функции
